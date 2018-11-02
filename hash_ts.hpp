@@ -6,35 +6,35 @@ static std::mutex RWLOCK;
 
 uint32_t hashSrc(const unsigned char *buf, int len)
 {
-    unsigned int hash = 5381;
+	unsigned int hash = 5381;
 
-    while (len--)
-        hash = ((hash << 5) + hash) + (*buf++); // hash * 33 + c
-    return hash;
+	while (len--)
+		hash = ((hash << 5) + hash) + (*buf++); // hash * 33 + c
+	return hash;
 }
 
 template<typename KT>
 uint32_t hashFun(const KT &key, int size)
 {
-    return hashSrc((unsigned char*)&key, sizeof(key)) % size;
+	return hashSrc((unsigned char*)&key, sizeof(key)) % size;
 }
 
 template<>
 uint32_t hashFun(const VOIDPTR &key, int size)
 {
-    return hashSrc((unsigned char*)key, strlen((const char *)key)) % size;
+	return hashSrc((unsigned char*)key, strlen((const char *)key)) % size;
 }
 
 template<>
 uint32_t hashFun(const CHARPTR &key, int size)
 {
-    return hashSrc((unsigned char*)key, strlen((const char *)key)) % size;
+	return hashSrc((unsigned char*)key, strlen((const char *)key)) % size;
 }
 
 template<>
 uint32_t hashFun(const string &key, int size)
 {
-    return hashSrc((unsigned char*)key.c_str(), key.size()) % size;
+	return hashSrc((unsigned char*)key.c_str(), key.size()) % size;
 }
 
 template<typename KT, typename VT>
@@ -45,36 +45,37 @@ Node<KT, VT>::Node() : next(nullptr), empty(true), readNum(0)
 template<typename KT, typename VT>
 void Node<KT, VT>::keepValue(const KT &k, const VT &v)
 {
-    key = k;
-    value = v;    
+	key = k;
+	value = v;    
 }
 
 template<typename KT, typename VT>
 IdleNode<KT, VT>::IdleNode() : m_size(0), m_head(nullptr), m_tail(nullptr)
 {
 }
+
 template<typename KT, typename VT>
 IdleNode<KT, VT>::~IdleNode()
 {
-    while (m_head)
-    {
-        Node<KT, VT> *node = m_head->next;
-        delete m_head;
-        m_head = nullptr;
-        m_head = node;    
-    }
+	while (m_head)
+	{
+		Node<KT, VT> *node = m_head->next;
+		delete m_head;
+		m_head = nullptr;
+		m_head = node;    
+	}
 }
 
 template<typename KT, typename VT>
 void IdleNode<KT, VT>::add(Node<KT, VT> *node, int size)
 {
-    if (m_size == size)
-    {
-        delete node;
-        node = nullptr;
-        return;
-    }
-    
+	if (m_size == size)
+	{
+		delete node;
+		node = nullptr;
+		return;
+	}
+
 	node->empty = true;
 	node->next = nullptr;
 	if (0 == m_size)
@@ -113,7 +114,7 @@ Node<KT, VT> *IdleNode<KT, VT>::get()
 	}
 	node->empty = false;
 	node->next = nullptr;
-	
+
 	return node;		
 }
 
@@ -134,18 +135,18 @@ HashTs<KT, VT>::~HashTs()
 {
 	if (m_table)
 	{
-	    for (int i = 0; i < m_indexSize; ++i)
-	    {
-	        Node<KT, VT> *node = (m_table + i)->next;
-	        while (node)
-	        {
-	            Node<KT, VT> *next = node->next;
-	            delete node;
-	            node = nullptr;
-	            node = next;    
-	        }
-	    }
-	    
+		for (int i = 0; i < m_indexSize; ++i)
+		{
+			Node<KT, VT> *node = (m_table + i)->next;
+			while (node)
+			{
+				Node<KT, VT> *next = node->next;
+				delete node;
+				node = nullptr;
+				node = next;    
+			}
+		}
+
 		delete[] m_table;
 		m_table = nullptr;
 	}
@@ -154,22 +155,22 @@ HashTs<KT, VT>::~HashTs()
 template<typename KT, typename VT>
 void HashTs<KT, VT>::add(const KT &key, const VT &value)
 {
-    int index = hashFun(key, m_indexSize);
-    std::lock_guard<std::mutex> lck(RWLOCK); 
-    Node<KT, VT> *node(nullptr);
-    if (node = find(key, index))
-    {
-        if (node->readNum > 0)
-	    {
-	        cout << "node[" << node->key << "], is read locked, can't modify!" << endl;
-	        return;    
-	    }
-        node->value = value;
-        return;
-    }
-    
-    node = m_table + index;
-    if (node->empty)
+	int index = hashFun(key, m_indexSize);
+	std::lock_guard<std::mutex> lck(RWLOCK); 
+	Node<KT, VT> *node(nullptr);
+	if (node = find(key, index))
+	{
+		if (node->readNum > 0)
+		{
+			cout << "node[" << node->key << "], is read locked, can't modify!" << endl;
+			return;    
+		}
+		node->value = value;
+		return;
+	}
+
+	node = m_table + index;
+	if (node->empty)
 	{
 		node->keepValue(key, value);
 		node->empty = false;
@@ -195,9 +196,9 @@ Node<KT, VT> *HashTs<KT, VT>::find(const KT &key)
 	while (node)
 	{
 		if (equal(node, key))
-	    {
+		{
 			return node;
-	    }
+		}
 		else
 			node = node->next;
 	}
@@ -208,16 +209,16 @@ Node<KT, VT> *HashTs<KT, VT>::find(const KT &key)
 template<typename KT, typename VT>
 Node<KT, VT>    *HashTs<KT, VT>::findLock(const KT &key)
 {
-    int index = hashFun(key, m_indexSize);
+	int index = hashFun(key, m_indexSize);
 	std::lock_guard<std::mutex> lck(RWLOCK); 
 	Node<KT, VT> *node = m_table + index;
 	while (node)
 	{
 		if (equal(node, key))
-	    {
-	        node->readNum += 1;
+		{
+			node->readNum += 1;
 			return node;
-	    }
+		}
 		else
 			node = node->next;
 	}
@@ -228,16 +229,16 @@ Node<KT, VT>    *HashTs<KT, VT>::findLock(const KT &key)
 template<typename KT, typename VT>
 void HashTs<KT, VT>::findUnlock(const KT &key)
 {
-    int index = hashFun(key, m_indexSize);
+	int index = hashFun(key, m_indexSize);
 	std::lock_guard<std::mutex> lck(RWLOCK); 
 	Node<KT, VT> *node = m_table + index;
 	while (node)
 	{
 		if (equal(node, key))
-	    {
-	        node->readNum -= 1;
-	        break;
-	    }
+		{
+			node->readNum -= 1;
+			break;
+		}
 		else
 			node = node->next;
 	}
@@ -250,9 +251,9 @@ Node<KT, VT> *HashTs<KT, VT>::find(const KT &key, int index)
 	while (node)
 	{
 		if (equal(node, key))
-	    {
+		{
 			return node;
-	    }
+		}
 		else
 			node = node->next;
 	}
@@ -268,11 +269,11 @@ void HashTs<KT, VT>::HashTs::del(const KT &key)
 	Node<KT, VT> *node = m_table + index;
 	if (equal(node, key))
 	{
-	    if (node->readNum > 0)
-	    {
-	        cout << "node[" << node->key << "], is read locked, can't delete!" << endl;
-	        return;    
-	    }
+		if (node->readNum > 0)
+		{
+			cout << "node[" << node->key << "], is read locked, can't delete!" << endl;
+			return;    
+		}
 		node->empty = true;
 		--m_totalNum;
 		return;
@@ -282,14 +283,14 @@ void HashTs<KT, VT>::HashTs::del(const KT &key)
 	{
 		if (equal(next, key))
 		{
-		    if (next->readNum > 0)
-    	    {
-    	        cout << "node[" << next->key << "], is read locked, can't delete!" << endl;
-    	        return;    
-    	    }
+			if (next->readNum > 0)
+			{
+				cout << "node[" << next->key << "], is read locked, can't delete!" << endl;
+				return;    
+			}
 			node->next = next->next;
 			m_idle.add(next, m_indexSize);
-		    --m_totalNum;
+			--m_totalNum;
 			break;
 		}
 		node = next;
@@ -300,38 +301,38 @@ void HashTs<KT, VT>::HashTs::del(const KT &key)
 template<typename KT, typename VT>
 void HashTs<KT, VT>::print()
 {
-    for (int i = 0; i < m_indexSize; ++i)
-        printIndex(i);
+	for (int i = 0; i < m_indexSize; ++i)
+		printIndex(i);
 }
 
 template<typename KT, typename VT>
 void HashTs<KT, VT>::printIndex(int index)
 {
-    Node<KT, VT> *node = m_table + index;
-    while (node)
-    {
-        if (node == m_table + index)
-            cout << index << ":";
-        if (!node->empty)
-            cout << node->key;
-        if (node->next)
-            cout << "->";
-        
-        node = node->next;
-    }
-    cout << endl;
+	Node<KT, VT> *node = m_table + index;
+	while (node)
+	{
+		if (node == m_table + index)
+			cout << index << ":";
+		if (!node->empty)
+			cout << node->key;
+		if (node->next)
+			cout << "->";
+
+		node = node->next;
+	}
+	cout << endl;
 }
 
 template<typename KT, typename VT>
 bool HashTs<KT, VT>::equal(Node<KT, VT> *node, const KT &key)
 {
-    if (node->empty)
-        return false;    
-    
-    if (node->key != key)
-        return false;
-    
-    return true;
+	if (node->empty)
+		return false;    
+
+	if (node->key != key)
+		return false;
+
+	return true;
 }
 
 template<typename VT>
@@ -351,18 +352,18 @@ HashTs<CHARPTR, VT>::~HashTs()
 {
 	if (m_table)
 	{
-	    for (int i = 0; i < m_indexSize; ++i)
-	    {
-	        Node<CHARPTR, VT> *node = (m_table + i)->next;
-	        while (node)
-	        {
-	            Node<CHARPTR, VT> *next = node->next;
-	            delete node;
-	            node = nullptr;
-	            node = next;    
-	        }
-	    }
-	    
+		for (int i = 0; i < m_indexSize; ++i)
+		{
+			Node<CHARPTR, VT> *node = (m_table + i)->next;
+			while (node)
+			{
+				Node<CHARPTR, VT> *next = node->next;
+				delete node;
+				node = nullptr;
+				node = next;    
+			}
+		}
+
 		delete[] m_table;
 		m_table = nullptr;
 	}
@@ -371,21 +372,21 @@ HashTs<CHARPTR, VT>::~HashTs()
 template<typename VT>
 void HashTs<CHARPTR, VT>::add(const CHARPTR key, const VT &value)
 {
-    int index = hashFun(key, m_indexSize);
-    std::lock_guard<std::mutex> lck(RWLOCK); 
-    Node<CHARPTR, VT> *node(nullptr);
-    if (node = find(key, index))
-    {
-        if (node->readNum > 0)
-	    {
-	        cout << "node[" << node->key << "], is read locked, can't modify!" << endl;
-	        return;    
-	    }
-        node->value = value;
-        return;
-    }
-    node = m_table + index;
-    if (node->empty)
+	int index = hashFun(key, m_indexSize);
+	std::lock_guard<std::mutex> lck(RWLOCK); 
+	Node<CHARPTR, VT> *node(nullptr);
+	if (node = find(key, index))
+	{
+		if (node->readNum > 0)
+		{
+			cout << "node[" << node->key << "], is read locked, can't modify!" << endl;
+			return;    
+		}
+		node->value = value;
+		return;
+	}
+	node = m_table + index;
+	if (node->empty)
 	{
 		node->keepValue(key, value);
 		node->empty = false;
@@ -411,9 +412,9 @@ Node<CHARPTR, VT> *HashTs<CHARPTR, VT>::find(const CHARPTR key)
 	while (node)
 	{
 		if (equal(node, key))
-	    {
-	        return node;
-	    }
+		{
+			return node;
+		}
 		else
 			node = node->next;
 	}
@@ -424,16 +425,16 @@ Node<CHARPTR, VT> *HashTs<CHARPTR, VT>::find(const CHARPTR key)
 template<typename VT>
 Node<CHARPTR, VT>   *HashTs<CHARPTR, VT>::findLock(const CHARPTR key)
 {
-    int index = hashFun(key, m_indexSize);
+	int index = hashFun(key, m_indexSize);
 	std::lock_guard<std::mutex> lck(RWLOCK); 
 	Node<CHARPTR, VT> *node = m_table + index;
 	while (node)
 	{
 		if (equal(node, key))
-	    {
-	        node->readNum += 1;
+		{
+			node->readNum += 1;
 			return node;
-	    }
+		}
 		else
 			node = node->next;
 	}
@@ -444,16 +445,16 @@ Node<CHARPTR, VT>   *HashTs<CHARPTR, VT>::findLock(const CHARPTR key)
 template<typename VT>
 void HashTs<CHARPTR, VT>::findUnlock(const CHARPTR key)
 {
-    int index = hashFun(key, m_indexSize);
+	int index = hashFun(key, m_indexSize);
 	std::lock_guard<std::mutex> lck(RWLOCK); 
 	Node<CHARPTR, VT> *node = m_table + index;
 	while (node)
 	{
 		if (equal(node, key))
-	    {
-	        node->readNum -= 1;
-	        break;
-	    }
+		{
+			node->readNum -= 1;
+			break;
+		}
 		else
 			node = node->next;
 	}
@@ -466,9 +467,9 @@ Node<CHARPTR, VT> *HashTs<CHARPTR, VT>::find(const CHARPTR key, int index)
 	while (node)
 	{
 		if (equal(node, key))
-	    {
-	        return node;
-	    }
+		{
+			return node;
+		}
 		else
 			node = node->next;
 	}
@@ -484,11 +485,11 @@ void HashTs<CHARPTR, VT>::HashTs::del(const CHARPTR key)
 	Node<CHARPTR, VT> *node = m_table + index;
 	if (equal(node, key))
 	{
-	    if (node->readNum > 0)
-	    {
-	        cout << "node[" << node->key << "], is read locked, can't delete!" << endl;
-	        return;    
-	    }
+		if (node->readNum > 0)
+		{
+			cout << "node[" << node->key << "], is read locked, can't delete!" << endl;
+			return;    
+		}
 		node->empty = true;
 		--m_totalNum;
 		return;
@@ -498,14 +499,14 @@ void HashTs<CHARPTR, VT>::HashTs::del(const CHARPTR key)
 	{
 		if (equal(next, key))
 		{
-		    if (next->readNum > 0)
-    	    {
-    	        cout << "node[" << next->key << "], is read locked, can't delete!" << endl;
-    	        return;    
-    	    }
+			if (next->readNum > 0)
+			{
+				cout << "node[" << next->key << "], is read locked, can't delete!" << endl;
+				return;    
+			}
 			node->next = next->next;
 			m_idle.add(next, m_indexSize);
-		    --m_totalNum;
+			--m_totalNum;
 			break;
 		}
 		node = next;
@@ -516,36 +517,36 @@ void HashTs<CHARPTR, VT>::HashTs::del(const CHARPTR key)
 template<typename VT>
 void HashTs<CHARPTR, VT>::print()
 {
-    for (int i = 0; i < m_indexSize; ++i)
-        printIndex(i);
+	for (int i = 0; i < m_indexSize; ++i)
+		printIndex(i);
 }
 
 template<typename VT>
 void HashTs<CHARPTR, VT>::printIndex(int index)
 {
-    Node<CHARPTR, VT> *node = m_table + index;
-    while (node)
-    {
-        if (node == m_table + index)
-            cout << index << ":";
-        if (!node->empty)
-            cout << node->key;
-        if (node->next)
-            cout << "->";
-        
-        node = node->next;
-    }
-    cout << endl;
+	Node<CHARPTR, VT> *node = m_table + index;
+	while (node)
+	{
+		if (node == m_table + index)
+			cout << index << ":";
+		if (!node->empty)
+			cout << node->key;
+		if (node->next)
+			cout << "->";
+
+		node = node->next;
+	}
+	cout << endl;
 }
 
 template<typename VT>
 bool HashTs<CHARPTR, VT>::equal(Node<CHARPTR, VT> *node, const CHARPTR key)
 {
-    if (node->empty)
-        return false;    
-    
-    if (strcmp(node->key, key))
-        return false;
-    
-    return true;
+	if (node->empty)
+		return false;    
+
+	if (strcmp(node->key, key))
+		return false;
+
+	return true;
 }
