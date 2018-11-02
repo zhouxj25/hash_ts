@@ -20,12 +20,14 @@ int main()
 	void *p2 = malloc(10);
 	memcpy(p1, "123456789", 9);
 	memcpy(p2, "abcdefghi", 9);
-	HashTs<string, void*> hashV();
+	HashTs<string, void*> hashV(10);
 	hashV.add("aa", p1);
 	hashV.add("bb", p2);
 	Node<string, void*> *node = hashV.findLock("bb");
 	hashV.del("bb");
 	hashV.findUnlock("bb");
-	hashV.del("bb");	
+	hashV.del("bb");
+    	free(p1);
+    	free(p2);
 	return 0;
 }
