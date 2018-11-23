@@ -1,5 +1,9 @@
-#ifndef HASH_TS_H
-#define HASH_TS_H
+/*
+ * multithread safe hash table, can lock the specified key avoid be update or delete.
+ * @author zhouxj
+ * @version 1.0, 2018-11-01
+ */
+#pragma once
 #include <utility>
 #include <string>
 #include <mutex>
@@ -49,11 +53,11 @@ struct Node<CHARPTR, CHARPTR> {
 		memcpy(key, k, strlen(k));
 		memcpy(value, v, strlen(v));
 	}
-	CHARPTR value;
-	CHARPTR key;
+	CHARPTR 	value;
+	CHARPTR 	key;
 	Node<CHARPTR, CHARPTR>    *next;
-	bool	empty;
-	int     rLock;
+	bool		empty;
+	int     	rLock;
 };
 
 template<typename KT>
@@ -67,10 +71,10 @@ struct Node<KT, CHARPTR> {
 		value = new char[strlen(v)];
 		memcpy(value, v, strlen(v));
 	}
-	CHARPTR value;
-	KT key;
+	CHARPTR 	value;
+	KT 		key;
 	Node<KT, CHARPTR>    *next;
-	bool	empty;
+	bool		empty;
 };
 
 template<typename VT>
@@ -84,10 +88,10 @@ struct Node<CHARPTR, VT> {
 		value = v;
 		memcpy(key, k, strlen(k));
 	}
-	VT value;
-	CHARPTR key;
+	VT 		value;
+	CHARPTR 	key;
 	Node<CHARPTR, VT>    *next;
-	bool	empty;
+	bool		empty;
 };
 
 template<typename KT, typename VT>
@@ -100,7 +104,7 @@ class IdleNode {
 
 		Node<KT, VT> *get();
 	private:
-		int 	m_size;
+		int 		m_size;
 		Node<KT, VT> 	*m_head;
 		Node<KT, VT> 	*m_tail;
 };
@@ -124,8 +128,8 @@ class HashTs {
 		void    printIndex(int index);
 		bool    equal(Node<KT, VT> *node, const KT &key);
 	private:
-		int         m_indexSize;
-		int 		m_totalNum;
+		int        	 	m_indexSize;
+		int 			m_totalNum;
 		Node<KT, VT> 		*m_table;
 		IdleNode<KT, VT> 	m_idle;
 };
@@ -148,10 +152,8 @@ class HashTs<CHARPTR, VT> {
 		void    printIndex(int index);
 		bool    equal(Node<CHARPTR, VT> *node, const CHARPTR key);
 	private:
-		int         m_indexSize;
-		int 		m_totalNum;
-		Node<CHARPTR, VT> 		*m_table;
+		int         		m_indexSize;
+		int 			m_totalNum;
+		Node<CHARPTR, VT> 	*m_table;
 		IdleNode<CHARPTR, VT> 	m_idle;
 };
-
-#endif
